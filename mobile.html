@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gra Marchewka - Mobile</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f0f8ff;
+            overflow: hidden;
+        }
+        .game-container {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            overflow: hidden;
+            background-image: url('trawa_pion.gif'); /* Tło pionowe */
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+        }
+        .carrot {
+            position: absolute;
+            bottom: 150px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 150px;
+            height: 150px;
+            background: url('marchewka.gif') no-repeat center/contain;
+        }
+        .obstacle {
+            position: absolute;
+            bottom: 150px;
+            width: 70px;
+            height: 70px;
+            background-size: contain;
+            background-repeat: no-repeat;
+        }
+        .score {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            font-size: 18px;
+            font-weight: bold;
+        }
+        .high-score {
+            position: absolute;
+            top: 40px;
+            left: 10px;
+            font-size: 16px;
+        }
+        .game-over {
+            display: none;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+        }
+        .game-over h1 {
+            font-size: 36px;
+            margin: 0;
+        }
+        .start-button-container {
+            position: absolute;
+            top: 35%;  
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+        }
+        #start-button {
+            padding: 10px 20px;
+            font-size: 18px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            cursor: pointer;
+            border-radius: 5px;
+        }
+        #start-button:hover {
+            background-color: #45a049;
+        }
+    </style>
+</head>
+<body>
+    <audio id="background-music" src="music.mp3" loop></audio>
+    <audio id="jump-sound" src="jump.wav"></audio>
+    
+    <div class="game-container">
+        <div class="score">Punkty: 0</div>
+        <div class="high-score">Najwyższy wynik: 0</div>
+        <div class="carrot"></div>
+        <div class="game-over">
+            <h1>Game Over</h1>
+        </div>
+        <div class="start-button-container">
+            <button id="start-button">START</button>
+        </div>
+    </div>
+
+    <script>
+        const carrot = document.querySelector('.carrot');
+        const gameContainer = document.querySelector('.game-container');
+        const scoreDisplay = document.querySelector('.score');
+        const highScoreDisplay = document.querySelector('.high-score');
+        const gameOverScreen = document.querySelector('.game-over');
+        const startButton = document.getElementById('start-button');
+        const backgroundMusic = document.getElementById('background-music');
+        const jumpSound = document.getElementById('jump-sound');
+
+        let isJumping = false;
+        let score = 0;
+        let highScore = parseInt(localStorage.getItem('highScore')) || 0;
+        let obstacles = [];
+        let gameInterval;
+        let obstacleSpeed = 8; // Dopasowane do mniejszego ekranu
+        let gameOver = false;
+
+        highScoreDisplay.textContent = `Najwyższy wynik: ${highScore}`;
+
+        // Start music on user interaction
+        document.addEventListener('keydown', startMusic);
+        document.addEventListener('click', startMusic);
+
+        function startMusic() {
+            backgroundMusic.play();
+            document.removeEventListener('keydown', startMusic);
+            document.removeEventListener('click', startMusic);
+        }
+
+        document.addEventListener('keydown', (e) => {
+            if (e.code === 'Space' && !isJumping && !gameOver) {
+                jump();
+            }
+        });
+
+        document.addEventListener('touchstart', (e) => {
+            if (!isJumping && !gameOver) {
+                jump();
+            }
+        });
+
+        function jump() {
+            isJumping = true;
+            let jumpHeight = 0;
+
+            jumpSound.play();
+
+            let upInterval = setInterval(() => {
+                if (jumpHeight >= 200) {
+                    clearInterval(upInterval);
+                    let downInterval = setInterval(() => {
+                        if (jumpHeight <= 0) {
+                            clearInterval(downInterval);
+                            isJumping = false;
+                        }
+                        jumpHeight -= 10;
+                        carrot.style.bottom = `${150 + jumpHeight}px`;
+                    }, 20);
+                }
+                jumpHeight += 10;
+                carrot.style.bottom = `${150 + jumpHeight}px`;
+            }, 20);
+        }
+
+        function createObstacle() {
+            if (gameOver) return;
+
+            const obstacle = document.createElement('div');
+            obstacle.classList.add('obstacle');
+            obstacle.style.left = '100vw';
+            obstacle.style.backgroundImage = `url(${Math.random() < 0.5 ? 'cebula.png' : 'czosnek.png'})`;
+            gameContainer.appendChild(obstacle);
+            obstacles.push(obstacle);
+        }
+
+        function moveObstacles() {
+            obstacles.forEach((obstacle, index) => {
+                const obstacleLeft = parseInt(getComputedStyle(obstacle).left);
+                obstacle.style.left = `${obstacleLeft - obstacleSpeed}px`;
+
+                if (obstacleLeft < -70) {
+                    gameContainer.removeChild(obstacle);
+                    obstacles.splice(index, 1);
+                    score++;
+                    scoreDisplay.textContent = `Punkty: ${score}`;
+
+                    if (score % 10 === 0) {
+                        obstacleSpeed += 1;
+                    }
+                }
+
+                const carrotRect = carrot.getBoundingClientRect();
+                const obstacleRect = obstacle.getBoundingClientRect();
+
+                if (
+                    carrotRect.right > obstacleRect.left &&
+                    carrotRect.left < obstacleRect.right &&
+                    carrotRect.bottom > obstacleRect.top
+                ) {
+                    endGame();
+                }
+            });
+        }
+
+        startButton.addEventListener('click', () => {
+            gameOver = false;
+            score = 0;
+            scoreDisplay.textContent = `Punkty: ${score}`;
+            gameOverScreen.style.display = 'none';
+            startButton.style.display = 'none';
+            obstacles.forEach(obstacle => gameContainer.removeChild(obstacle));
+            obstacles = [];
+
+            let obstacleTimer = 0;
+
+            function gameLoop() {
+                if (gameOver) return;
+
+                if (obstacleTimer % 120 === 0) {
+                    createObstacle();
+                }
+                obstacleTimer++;
+                moveObstacles();
+
+                requestAnimationFrame(gameLoop);
+            }
+
+            gameLoop();
+        });
+
+        function endGame() {
+            gameOver = true;
+            gameOverScreen.style.display = 'block';
+            startButton.style.display = 'block';
+            if (score > highScore) {
+                highScore = score;
+                localStorage.setItem('highScore', highScore);
+                highScoreDisplay.textContent = `Najwyższy wynik: ${highScore}`;
+            }
+        }
+    </script>
+</body>
+</html>
