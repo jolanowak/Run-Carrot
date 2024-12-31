@@ -133,12 +133,7 @@
         let highScore = parseInt(localStorage.getItem('highScore')) || 0;
         let obstacles = [];
         let gameInterval;
-        let obstacleSpeed = 5;  // Domyślna prędkość przesuwania przeszkód
-
-        // Sprawdzamy, czy jest to urządzenie mobilne i zmieniamy prędkość przeszkód
-        if (window.innerWidth <= 768) {
-            obstacleSpeed = 2;  // Zmniejszenie prędkości na urządzeniach mobilnych
-        }
+        let obstacleSpeed = 5;  // Prędkość przesuwania przeszkód (domyślna, która działa normalnie)
 
         let gameOver = false;
         let gameStarted = false;
