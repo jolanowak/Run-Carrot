@@ -69,6 +69,25 @@
             font-size: 18px;
             cursor: pointer;
         }
+        .start-button-container {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+        }
+        #start-button {
+            padding: 15px 30px;
+            font-size: 24px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            cursor: pointer;
+            border-radius: 5px;
+        }
+        #start-button:hover {
+            background-color: #45a049;
+        }
     </style>
 </head>
 <body>
@@ -83,6 +102,9 @@
             <h1>Game Over</h1>
             <button onclick="startGame()">Try Again</button>
         </div>
+        <div class="start-button-container">
+            <button id="start-button">START</button>
+        </div>
     </div>
 
     <script>
@@ -91,6 +113,7 @@
         const scoreDisplay = document.querySelector('.score');
         const highScoreDisplay = document.querySelector('.high-score');
         const gameOverScreen = document.querySelector('.game-over');
+        const startButton = document.getElementById('start-button');
         const backgroundMusic = document.getElementById('background-music');
         const jumpSound = document.getElementById('jump-sound'); // Zmienna dla dźwięku skoku
 
@@ -123,6 +146,13 @@
             }
             if (e.code === 'ArrowRight' && !gameOver) {
                 moveCarrotRight();
+            }
+        });
+
+        // Dodaj obsługę dotyku
+        document.addEventListener('touchstart', (e) => {
+            if (!isJumping && !gameOver) {
+                jump();
             }
         });
 
@@ -219,13 +249,16 @@
             gameOverScreen.style.display = 'none';
             score = 0;
             obstacleSpeed = 10; // Reset speed
-            scoreDisplay.textContent = `Points ${score}`;
+            scoreDisplay.textContent = `Points: ${score}`;
             obstacles.forEach(obstacle => gameContainer.removeChild(obstacle));
             obstacles = [];
 
+            // Ukryj przycisk START
+            startButton.style.display = 'none';
+
             let obstacleTimer = 0;
 
-            // Using requestAnimationFrame instead of setInterval for the game loop
+            // Używamy requestAnimationFrame do pętli gry
             function gameLoop() {
                 if (gameOver) return; // Jeżeli gra zakończona, przerywamy pętlę
 
@@ -235,24 +268,24 @@
                 obstacleTimer++;
                 moveObstacles();
                 
-                // Continue the game loop
+                // Kontynuuj pętlę gry
                 requestAnimationFrame(gameLoop);
             }
 
-            gameLoop(); // Start the loop
+            gameLoop(); // Rozpocznij pętlę gry
         }
 
         function endGame() {
             gameOver = true; // Gra zakończona
             gameOverScreen.style.display = 'block';
+            startButton.style.display = 'block'; // Pokaż przycisk START
+
             if (score > highScore) {
                 highScore = score;
                 localStorage.setItem('highScore', highScore);
                 highScoreDisplay.textContent = `High score: ${highScore}`;
             }
         }
-
-        startGame();
     </script>
 </body>
 </html>
