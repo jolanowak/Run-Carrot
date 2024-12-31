@@ -118,6 +118,7 @@
         let gameInterval;
         let obstacleSpeed = 8; // Dopasowane do mniejszego ekranu
         let gameOver = false;
+        let gameStarted = false; // Nowa zmienna do śledzenia, czy gra rozpoczęła się
 
         highScoreDisplay.textContent = `Najwyższy wynik: ${highScore}`;
 
@@ -131,14 +132,45 @@
             document.removeEventListener('click', startMusic);
         }
 
+        // Funkcja, która uruchomi grę po kliknięciu przycisku START
+        startButton.addEventListener('click', () => {
+            gameStarted = true; // Gra się zaczęła
+            score = 0;
+            scoreDisplay.textContent = `Punkty: ${score}`;
+            gameOverScreen.style.display = 'none';
+            startButton.style.display = 'none'; // Ukrywamy przycisk START
+            obstacles.forEach(obstacle => gameContainer.removeChild(obstacle));
+            obstacles = [];
+            startGame(); // Uruchamiamy grę
+        });
+
+        // Funkcja, która uruchamia pętlę gry
+        function startGame() {
+            let obstacleTimer = 0;
+
+            function gameLoop() {
+                if (gameOver || !gameStarted) return; // Gra skończona lub nie rozpoczęta
+
+                if (obstacleTimer % 120 === 0) {
+                    createObstacle();
+                }
+                obstacleTimer++;
+                moveObstacles();
+
+                requestAnimationFrame(gameLoop);
+            }
+
+            gameLoop();
+        }
+
         document.addEventListener('keydown', (e) => {
-            if (e.code === 'Space' && !isJumping && !gameOver) {
+            if (e.code === 'Space' && !isJumping && !gameOver && gameStarted) {
                 jump();
             }
         });
 
         document.addEventListener('touchstart', (e) => {
-            if (!isJumping && !gameOver) {
+            if (!isJumping && !gameOver && gameStarted) {
                 jump();
             }
         });
@@ -206,36 +238,10 @@
             });
         }
 
-        startButton.addEventListener('click', () => {
-            gameOver = false;
-            score = 0;
-            scoreDisplay.textContent = `Punkty: ${score}`;
-            gameOverScreen.style.display = 'none';
-            startButton.style.display = 'none';
-            obstacles.forEach(obstacle => gameContainer.removeChild(obstacle));
-            obstacles = [];
-
-            let obstacleTimer = 0;
-
-            function gameLoop() {
-                if (gameOver) return;
-
-                if (obstacleTimer % 120 === 0) {
-                    createObstacle();
-                }
-                obstacleTimer++;
-                moveObstacles();
-
-                requestAnimationFrame(gameLoop);
-            }
-
-            gameLoop();
-        });
-
         function endGame() {
             gameOver = true;
             gameOverScreen.style.display = 'block';
-            startButton.style.display = 'block';
+            startButton.style.display = 'block'; // Pokazujemy przycisk START
             if (score > highScore) {
                 highScore = score;
                 localStorage.setItem('highScore', highScore);
