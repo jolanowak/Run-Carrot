@@ -25,8 +25,7 @@
         .carrot {
             position: absolute;
             bottom: 150px;
-            left: 50%;
-            transform: translateX(-50%);
+            left: 30%;  /* Przesunięcie marchewki w lewo */
             width: 150px;
             height: 150px;
             background: url('marchewka.gif') no-repeat center/contain;
@@ -83,6 +82,22 @@
         #start-button:hover {
             background-color: #45a049;
         }
+        #jump-button {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 15px 30px;
+            font-size: 18px;
+            background-color: #FF6347; /* Kolor przycisku Jump */
+            color: white;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+        }
+        #jump-button:hover {
+            background-color: #FF4500;
+        }
     </style>
 </head>
 <body>
@@ -99,6 +114,7 @@
         <div class="start-button-container">
             <button id="start-button">START</button>
         </div>
+        <button id="jump-button">Jump</button>  <!-- Dodany przycisk Jump -->
     </div>
 
     <script>
@@ -108,6 +124,7 @@
         const highScoreDisplay = document.querySelector('.high-score');
         const gameOverScreen = document.querySelector('.game-over');
         const startButton = document.getElementById('start-button');
+        const jumpButton = document.getElementById('jump-button'); // Przycisk Jump
         const backgroundMusic = document.getElementById('background-music');
         const jumpSound = document.getElementById('jump-sound');
 
@@ -115,10 +132,9 @@
         let score = 0;
         let highScore = parseInt(localStorage.getItem('highScore')) || 0;
         let obstacles = [];
-        let gameInterval;
-        let obstacleSpeed = 8; // Dopasowane do mniejszego ekranu
+        let obstacleSpeed = 8;
         let gameOver = false;
-        let gameStarted = false; // Nowa zmienna do śledzenia, czy gra rozpoczęła się
+        let gameStarted = false; // Zmienna śledząca, czy gra rozpoczęła się
 
         highScoreDisplay.textContent = `Najwyższy wynik: ${highScore}`;
 
@@ -132,24 +148,26 @@
             document.removeEventListener('click', startMusic);
         }
 
-        // Funkcja, która uruchomi grę po kliknięciu przycisku START
+        // Rozpoczęcie gry po kliknięciu przycisku START
         startButton.addEventListener('click', () => {
-            gameStarted = true; // Gra się zaczęła
+            // Resetowanie stanu gry
+            gameOver = false;
+            gameStarted = true;
             score = 0;
             scoreDisplay.textContent = `Punkty: ${score}`;
             gameOverScreen.style.display = 'none';
-            startButton.style.display = 'none'; // Ukrywamy przycisk START
+            startButton.style.display = 'none';
             obstacles.forEach(obstacle => gameContainer.removeChild(obstacle));
             obstacles = [];
-            startGame(); // Uruchamiamy grę
+            startGame();
         });
 
-        // Funkcja, która uruchamia pętlę gry
+        // Uruchomienie gry
         function startGame() {
             let obstacleTimer = 0;
 
             function gameLoop() {
-                if (gameOver || !gameStarted) return; // Gra skończona lub nie rozpoczęta
+                if (gameOver || !gameStarted) return;
 
                 if (obstacleTimer % 120 === 0) {
                     createObstacle();
@@ -163,13 +181,8 @@
             gameLoop();
         }
 
-        document.addEventListener('keydown', (e) => {
-            if (e.code === 'Space' && !isJumping && !gameOver && gameStarted) {
-                jump();
-            }
-        });
-
-        document.addEventListener('touchstart', (e) => {
+        // Funkcja skoku po kliknięciu przycisku Jump
+        jumpButton.addEventListener('click', () => {
             if (!isJumping && !gameOver && gameStarted) {
                 jump();
             }
@@ -241,7 +254,7 @@
         function endGame() {
             gameOver = true;
             gameOverScreen.style.display = 'block';
-            startButton.style.display = 'block'; // Pokazujemy przycisk START
+            startButton.style.display = 'block'; 
             if (score > highScore) {
                 highScore = score;
                 localStorage.setItem('highScore', highScore);
