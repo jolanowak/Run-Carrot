@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gra Marchewka</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f0f8ff;
+            overflow: hidden;
+        }
+        .game-container {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            overflow: hidden;
+            background-image: url('trawa.gif'); /* Tło z pliku trawa.gif */
+            background-size: 100% auto; /* Ustawia tło w poziomie */
+            background-position: center;
+            background-repeat: no-repeat;
+        }
+        .carrot {
+            position: absolute;
+            bottom: 280px;
+            left: 100px;
+            width: 280px;
+            height: 280px;
+            background: url('marchewka.gif') no-repeat center/contain;
+        }
+        .obstacle {
+            position: absolute;
+            bottom: 280px;
+            width: 100px;
+            height: 100px;
+            background-size: contain;
+            background-repeat: no-repeat;
+        }
+        .score {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            font-size: 24px;
+            font-weight: bold;
+        }
+        .high-score {
+            position: absolute;
+            top: 40px;
+            left: 10px;
+            font-size: 20px;
+        }
+        .game-over {
+            display: none;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+        }
+        .game-over h1 {
+            font-size: 48px;
+            margin: 0;
+        }
+        .game-over button {
+            margin-top: 20px;
+            padding: 10px 20px;
+            font-size: 18px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <audio id="background-music" src="music.mp3" loop></audio>
+    <audio id="jump-sound" src="jump.wav"></audio> <!-- Dźwięk skoku w formacie .wav -->
+    
+    <div class="game-container">
+        <div class="score">Punkty: 0</div>
+        <div class="high-score">Najwyższy wynik: 0</div>
+        <div class="carrot"></div>
+        <div class="game-over">
+            <h1>Game Over</h1>
+            <button onclick="startGame()">Try Again</button>
+        </div>
+    </div>
+
+    <script>
+        const carrot = document.querySelector('.carrot');
+        const gameContainer = document.querySelector('.game-container');
+        const scoreDisplay = document.querySelector('.score');
+        const highScoreDisplay = document.querySelector('.high-score');
+        const gameOverScreen = document.querySelector('.game-over');
+        const backgroundMusic = document.getElementById('background-music');
+        const jumpSound = document.getElementById('jump-sound'); // Zmienna dla dźwięku skoku
+
+        let isJumping = false;
+        let score = 0;
+        let highScore = parseInt(localStorage.getItem('highScore')) || 0;
+        let obstacles = [];
+        let gameInterval;
+        let obstacleSpeed = 10;
+        let gameOver = false;
+
+        highScoreDisplay.textContent = `High score: ${highScore}`;
+
+        // Start music on user interaction
+        document.addEventListener('keydown', startMusic);
+        document.addEventListener('click', startMusic);
+
+        function startMusic() {
+            backgroundMusic.play();
+            document.removeEventListener('keydown', startMusic);
+            document.removeEventListener('click', startMusic);
+        }
+
+        document.addEventListener('keydown', (e) => {
+            if (e.code === 'Space' && !isJumping && !gameOver) {
+                jump();
+            }
+            if (e.code === 'ArrowLeft' && !gameOver) {
+                moveCarrotLeft();
+            }
+            if (e.code === 'ArrowRight' && !gameOver) {
+                moveCarrotRight();
+            }
+        });
+
+        function jump() {
+            isJumping = true;
+            let jumpHeight = 0;
+
+            // Odtwarzanie dźwięku skoku
+            jumpSound.play();
+
+            let upInterval = setInterval(() => {
+                if (jumpHeight >= 350) {
+                    clearInterval(upInterval);
+                    let downInterval = setInterval(() => {
+                        if (jumpHeight <= 0) {
+                            clearInterval(downInterval);
+                            isJumping = false;
+                        }
+                        jumpHeight -= 10;
+                        carrot.style.bottom = `${280 + jumpHeight}px`;
+                    }, 20);
+                }
+                jumpHeight += 10;
+                carrot.style.bottom = `${280 + jumpHeight}px`;
+            }, 20);
+        }
+
+        function moveCarrotLeft() {
+            const carrotRect = carrot.getBoundingClientRect();
+            const gameContainerRect = gameContainer.getBoundingClientRect();
+            const leftPosition = carrotRect.left - gameContainerRect.left;
+
+            if (leftPosition > 0) {
+                carrot.style.left = `${leftPosition - 20}px`;
+            }
+        }
+
+        function moveCarrotRight() {
+            const carrotRect = carrot.getBoundingClientRect();
+            const gameContainerRect = gameContainer.getBoundingClientRect();
+            const leftPosition = carrotRect.left - gameContainerRect.left;
+
+            const rightPosition = carrotRect.right - gameContainerRect.left;
+
+            // Jeżeli marchewka nie przekracza prawej krawędzi ekranu
+            if (rightPosition < gameContainerRect.width) {
+                carrot.style.left = `${leftPosition + 20}px`;
+            }
+        }
+
+        function createObstacle() {
+            if (gameOver) return; // Jeśli gra zakończona, nie twórz nowych przeszkód
+
+            const obstacle = document.createElement('div');
+            obstacle.classList.add('obstacle');
+            obstacle.style.left = '100vw';
+            obstacle.style.backgroundImage = `url(${Math.random() < 0.5 ? 'cebula.png' : 'czosnek.png'})`;
+            gameContainer.appendChild(obstacle);
+            obstacles.push(obstacle);
+        }
+
+        function moveObstacles() {
+            obstacles.forEach((obstacle, index) => {
+                const obstacleLeft = parseInt(getComputedStyle(obstacle).left);
+                obstacle.style.left = `${obstacleLeft - obstacleSpeed}px`;
+
+                if (obstacleLeft < -100) {
+                    gameContainer.removeChild(obstacle);
+                    obstacles.splice(index, 1);
+                    score++;
+                    scoreDisplay.textContent = `Points: ${score}`;
+
+                    // Increase speed more gradually (every 10 points instead of 5)
+                    if (score % 10 === 0) {
+                        obstacleSpeed += 1;
+                    }
+                }
+
+                const carrotRect = carrot.getBoundingClientRect();
+                const obstacleRect = obstacle.getBoundingClientRect();
+
+                if (
+                    carrotRect.right > obstacleRect.left &&
+                    carrotRect.left < obstacleRect.right &&
+                    carrotRect.bottom > obstacleRect.top
+                ) {
+                    endGame();
+                }
+            });
+        }
+
+        function startGame() {
+            gameOver = false; // Resetujemy stan gry
+            gameOverScreen.style.display = 'none';
+            score = 0;
+            obstacleSpeed = 10; // Reset speed
+            scoreDisplay.textContent = `Points ${score}`;
+            obstacles.forEach(obstacle => gameContainer.removeChild(obstacle));
+            obstacles = [];
+
+            let obstacleTimer = 0;
+
+            // Using requestAnimationFrame instead of setInterval for the game loop
+            function gameLoop() {
+                if (gameOver) return; // Jeżeli gra zakończona, przerywamy pętlę
+
+                if (obstacleTimer % 120 === 0) {
+                    createObstacle();
+                }
+                obstacleTimer++;
+                moveObstacles();
+                
+                // Continue the game loop
+                requestAnimationFrame(gameLoop);
+            }
+
+            gameLoop(); // Start the loop
+        }
+
+        function endGame() {
+            gameOver = true; // Gra zakończona
+            gameOverScreen.style.display = 'block';
+            if (score > highScore) {
+                highScore = score;
+                localStorage.setItem('highScore', highScore);
+                highScoreDisplay.textContent = `High score: ${highScore}`;
+            }
+        }
+
+        startGame();
+    </script>
+</body>
+</html>
