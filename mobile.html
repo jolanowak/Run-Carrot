@@ -17,24 +17,24 @@
             width: 100vw;
             height: 100vh;
             overflow: hidden;
-            background-image: url('trawa_pion.gif'); /* Tło pionowe */
-            background-size: cover;
+            background-image: url('trawa_pion.gif'); /* Tło z pliku trawa_pion.gif */
+            background-size: 100% auto;
             background-position: center;
             background-repeat: no-repeat;
         }
         .carrot {
             position: absolute;
-            bottom: 150px;
-            left: 10%;  /* Przesunięcie marchewki na lewą stronę */
+            bottom: 280px;
+            left: 50px; /* Przesunięta marchewka do lewej strony */
             width: 150px;
             height: 150px;
             background: url('marchewka.gif') no-repeat center/contain;
         }
         .obstacle {
             position: absolute;
-            bottom: 150px;
-            width: 70px;
-            height: 70px;
+            bottom: 280px;
+            width: 60px;
+            height: 60px;
             background-size: contain;
             background-repeat: no-repeat;
         }
@@ -42,14 +42,14 @@
             position: absolute;
             top: 10px;
             left: 10px;
-            font-size: 18px;
+            font-size: 24px;
             font-weight: bold;
         }
         .high-score {
             position: absolute;
             top: 40px;
             left: 10px;
-            font-size: 16px;
+            font-size: 20px;
         }
         .game-over {
             display: none;
@@ -60,19 +60,19 @@
             text-align: center;
         }
         .game-over h1 {
-            font-size: 36px;
+            font-size: 48px;
             margin: 0;
         }
         .start-button-container {
             position: absolute;
-            top: 35%;  
+            top: 40%;
             left: 50%;
             transform: translate(-50%, -50%);
             text-align: center;
         }
         #start-button {
-            padding: 10px 20px;
-            font-size: 18px;
+            padding: 15px 30px;
+            font-size: 24px;
             background-color: #4CAF50;
             color: white;
             border: none;
@@ -82,28 +82,28 @@
         #start-button:hover {
             background-color: #45a049;
         }
-        #jump-button {
+        .jump-button {
             position: absolute;
-            bottom: 20px;
+            bottom: 50px;
             left: 50%;
             transform: translateX(-50%);
             padding: 15px 30px;
             font-size: 18px;
-            background-color: #FF6347; /* Kolor przycisku Jump */
+            background-color: #4CAF50;
             color: white;
             border: none;
-            border-radius: 10px;
             cursor: pointer;
+            border-radius: 5px;
         }
-        #jump-button:hover {
-            background-color: #FF4500;
+        .jump-button:hover {
+            background-color: #45a049;
         }
     </style>
 </head>
 <body>
     <audio id="background-music" src="music.mp3" loop></audio>
     <audio id="jump-sound" src="jump.wav"></audio>
-    
+
     <div class="game-container">
         <div class="score">Punkty: 0</div>
         <div class="high-score">Najwyższy wynik: 0</div>
@@ -114,7 +114,7 @@
         <div class="start-button-container">
             <button id="start-button">START</button>
         </div>
-        <button id="jump-button">Jump</button>  <!-- Dodany przycisk Jump -->
+        <div class="jump-button" id="jump-button">JUMP</div>
     </div>
 
     <script>
@@ -124,7 +124,7 @@
         const highScoreDisplay = document.querySelector('.high-score');
         const gameOverScreen = document.querySelector('.game-over');
         const startButton = document.getElementById('start-button');
-        const jumpButton = document.getElementById('jump-button'); // Przycisk Jump
+        const jumpButton = document.getElementById('jump-button');
         const backgroundMusic = document.getElementById('background-music');
         const jumpSound = document.getElementById('jump-sound');
 
@@ -132,11 +132,12 @@
         let score = 0;
         let highScore = parseInt(localStorage.getItem('highScore')) || 0;
         let obstacles = [];
-        let obstacleSpeed = 8;
+        let gameInterval;
+        let obstacleSpeed = 5; // Zmieniona prędkość przeszkód
         let gameOver = false;
-        let gameStarted = false; // Zmienna śledząca, czy gra rozpoczęła się
+        let gameStarted = false;
 
-        highScoreDisplay.textContent = `Najwyższy wynik: ${highScore}`;
+        highScoreDisplay.textContent = `High score: ${highScore}`;
 
         // Start music on user interaction
         document.addEventListener('keydown', startMusic);
@@ -148,42 +149,9 @@
             document.removeEventListener('click', startMusic);
         }
 
-        // Rozpoczęcie gry po kliknięciu przycisku START
-        startButton.addEventListener('click', () => {
-            // Resetowanie stanu gry
-            gameOver = false;
-            gameStarted = true;
-            score = 0;
-            scoreDisplay.textContent = `Punkty: ${score}`;
-            gameOverScreen.style.display = 'none';
-            startButton.style.display = 'none';
-            obstacles.forEach(obstacle => gameContainer.removeChild(obstacle));
-            obstacles = [];
-            startGame();
-        });
-
-        // Uruchomienie gry
-        function startGame() {
-            let obstacleTimer = 0;
-
-            function gameLoop() {
-                if (gameOver || !gameStarted) return;
-
-                if (obstacleTimer % 120 === 0) {
-                    createObstacle();
-                }
-                obstacleTimer++;
-                moveObstacles();
-
-                requestAnimationFrame(gameLoop);
-            }
-
-            gameLoop();
-        }
-
-        // Funkcja skoku po kliknięciu przycisku Jump
+        // Przycisk "JUMP" na mobilnym ekranie
         jumpButton.addEventListener('click', () => {
-            if (!isJumping && !gameOver && gameStarted) {
+            if (!isJumping && !gameOver) {
                 jump();
             }
         });
@@ -195,7 +163,7 @@
             jumpSound.play();
 
             let upInterval = setInterval(() => {
-                if (jumpHeight >= 200) {
+                if (jumpHeight >= 350) {
                     clearInterval(upInterval);
                     let downInterval = setInterval(() => {
                         if (jumpHeight <= 0) {
@@ -203,12 +171,34 @@
                             isJumping = false;
                         }
                         jumpHeight -= 10;
-                        carrot.style.bottom = `${150 + jumpHeight}px`;
+                        carrot.style.bottom = `${280 + jumpHeight}px`;
                     }, 20);
                 }
                 jumpHeight += 10;
-                carrot.style.bottom = `${150 + jumpHeight}px`;
+                carrot.style.bottom = `${280 + jumpHeight}px`;
             }, 20);
+        }
+
+        function moveCarrotLeft() {
+            const carrotRect = carrot.getBoundingClientRect();
+            const gameContainerRect = gameContainer.getBoundingClientRect();
+            const leftPosition = carrotRect.left - gameContainerRect.left;
+
+            if (leftPosition > 0) {
+                carrot.style.left = `${leftPosition - 20}px`;
+            }
+        }
+
+        function moveCarrotRight() {
+            const carrotRect = carrot.getBoundingClientRect();
+            const gameContainerRect = gameContainer.getBoundingClientRect();
+            const leftPosition = carrotRect.left - gameContainerRect.left;
+
+            const rightPosition = carrotRect.right - gameContainerRect.left;
+
+            if (rightPosition < gameContainerRect.width) {
+                carrot.style.left = `${leftPosition + 20}px`;
+            }
         }
 
         function createObstacle() {
@@ -227,14 +217,14 @@
                 const obstacleLeft = parseInt(getComputedStyle(obstacle).left);
                 obstacle.style.left = `${obstacleLeft - obstacleSpeed}px`;
 
-                if (obstacleLeft < -70) {
+                if (obstacleLeft < -100) {
                     gameContainer.removeChild(obstacle);
                     obstacles.splice(index, 1);
                     score++;
-                    scoreDisplay.textContent = `Punkty: ${score}`;
+                    scoreDisplay.textContent = `Points: ${score}`;
 
                     if (score % 10 === 0) {
-                        obstacleSpeed += 1;
+                        obstacleSpeed += 0.5;
                     }
                 }
 
@@ -251,14 +241,41 @@
             });
         }
 
+        startButton.addEventListener('click', () => {
+            gameOver = false;
+            gameStarted = true;
+            score = 0;
+            scoreDisplay.textContent = `Points: ${score}`;
+            gameOverScreen.style.display = 'none';
+            startButton.style.display = 'none';
+            obstacles.forEach(obstacle => gameContainer.removeChild(obstacle));
+            obstacles = [];
+
+            let obstacleTimer = 0;
+
+            function gameLoop() {
+                if (gameOver || !gameStarted) return;
+
+                if (obstacleTimer % 200 === 0) {
+                    createObstacle();
+                }
+                obstacleTimer++;
+                moveObstacles();
+
+                requestAnimationFrame(gameLoop);
+            }
+
+            gameLoop();
+        });
+
         function endGame() {
             gameOver = true;
             gameOverScreen.style.display = 'block';
-            startButton.style.display = 'block'; 
+            startButton.style.display = 'block';
             if (score > highScore) {
                 highScore = score;
                 localStorage.setItem('highScore', highScore);
-                highScoreDisplay.textContent = `Najwyższy wynik: ${highScore}`;
+                highScoreDisplay.textContent = `High score: ${highScore}`;
             }
         }
     </script>
