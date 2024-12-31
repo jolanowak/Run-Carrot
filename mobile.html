@@ -18,7 +18,7 @@
             height: 100vh;
             overflow: hidden;
             background-image: url('trawa_pion.gif'); /* Tło z pliku trawa_pion.gif */
-            background-size: 100% auto;
+            background-size: cover; /* Tło wypełnia całą przestrzeń */
             background-position: center;
             background-repeat: no-repeat;
         }
@@ -84,7 +84,7 @@
         }
         .jump-button {
             position: absolute;
-            bottom: 50px;
+            bottom: 100px; /* Zmieniona pozycja przycisku, aby był wyżej */
             left: 50%;
             transform: translateX(-50%);
             padding: 15px 30px;
@@ -133,7 +133,7 @@
         let highScore = parseInt(localStorage.getItem('highScore')) || 0;
         let obstacles = [];
         let gameInterval;
-        let obstacleSpeed = 5; // Zmieniona prędkość przeszkód
+        let obstacleSpeed = 5;
         let gameOver = false;
         let gameStarted = false;
 
@@ -177,28 +177,6 @@
                 jumpHeight += 10;
                 carrot.style.bottom = `${280 + jumpHeight}px`;
             }, 20);
-        }
-
-        function moveCarrotLeft() {
-            const carrotRect = carrot.getBoundingClientRect();
-            const gameContainerRect = gameContainer.getBoundingClientRect();
-            const leftPosition = carrotRect.left - gameContainerRect.left;
-
-            if (leftPosition > 0) {
-                carrot.style.left = `${leftPosition - 20}px`;
-            }
-        }
-
-        function moveCarrotRight() {
-            const carrotRect = carrot.getBoundingClientRect();
-            const gameContainerRect = gameContainer.getBoundingClientRect();
-            const leftPosition = carrotRect.left - gameContainerRect.left;
-
-            const rightPosition = carrotRect.right - gameContainerRect.left;
-
-            if (rightPosition < gameContainerRect.width) {
-                carrot.style.left = `${leftPosition + 20}px`;
-            }
         }
 
         function createObstacle() {
